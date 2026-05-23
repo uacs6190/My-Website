@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Museum</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+<script type="module" src="https://unpkg.com/@splinetool/viewer@1.12.94/build/spline-viewer.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;background:#000;overflow:hidden}
+#scene{position:fixed;inset:0;width:100%;height:100%;border:none}
+#cover-left{position:fixed;bottom:0;left:0;width:160px;height:48px;background:#000;z-index:50}
+#cover-right{position:fixed;bottom:0;right:0;width:200px;height:56px;background:#000;z-index:50}
+#contact-btn{
+  position:fixed;bottom:1.5rem;right:1.5rem;z-index:9999;
+  padding:.85rem 2rem;background:#111;
+  border:1px solid rgba(255,255,255,.15);border-radius:100px;
+  color:rgba(255,255,255,.7);font-family:'Inter',sans-serif;
+  font-size:.85rem;letter-spacing:.15em;text-transform:uppercase;
+  cursor:pointer;transition:border-color .3s,color .3s,background .3s;
+  pointer-events:all!important;backdrop-filter:blur(10px)
+}
+#contact-btn:hover{border-color:rgba(255,255,255,.4);color:#fff;background:#222}
+#zones{position:fixed;inset:0;pointer-events:auto;cursor:default;z-index:20}
+.zone{position:absolute;pointer-events:all;cursor:pointer}
+#overlay{
+  position:fixed;inset:0;z-index:100;opacity:0;pointer-events:none;
+  transition:opacity .4s ease;overflow-y:auto;overflow-x:hidden;
+  scrollbar-width:none;-ms-overflow-style:none;
+  background:rgba(0,0,0,.92);backdrop-filter:blur(28px)
+}
+#overlay::-webkit-scrollbar{display:none}
+#overlay.open{opacity:1;pointer-events:all}
+#overlay.about-mode{background:transparent;backdrop-filter:none;pointer-events:none;overflow:hidden}
+#overlay.iframe-mode{pointer-events:none;overflow:hidden}
+#overlay.about-mode #overlay-title-screen,
+#overlay.about-mode #about-spacer{pointer-events:none}
+#scroll-trap{display:none;position:fixed;inset:0;z-index:105;pointer-events:none;overflow:hidden}
+#scroll-trap.active{display:block;pointer-events:none}
+#about-fade{
+  position:fixed;inset:0;z-index:98;
+  background:rgba(0,0,0,.92);backdrop-filter:blur(28px);
+  pointer-events:none;opacity:0;transition:none;will-change:opacity
+}
+#about-fade.active{opacity:1}
+#about-bg{position:fixed;inset:0;z-index:97;opacity:0;pointer-events:none}
+#about-bg.active{opacity:1;pointer-events:all}
+#about-bg spline-viewer{width:100%;height:100%;display:block}
+#overlay-title-screen{
+  height:100vh;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  position:relative;flex-shrink:0;background:transparent;
+  will-change:transform,opacity
+}
+#overlay-word{
+  font-family:'Inter',sans-serif;font-weight:900;
+  font-size:clamp(3rem,8vw,9rem);color:#fff;
+  letter-spacing:-.05em;text-align:center;line-height:.95;
+  max-width:85vw;text-transform:uppercase;
+  transform:translateY(24px);opacity:0;position:relative;z-index:103;
+  transition:transform .5s cubic-bezier(.16,1,.3,1) .1s,opacity .5s ease .1s
+}
+#overlay.open #overlay-word{transform:translateY(0);opacity:1}
+#overlay-close{
+  position:fixed;top:2rem;right:2rem;z-index:200;
+  width:40px;height:40px;border-radius:50%;
+  border:1px solid rgba(255,255,255,.1);background:rgba(0,0,0,.4);
+  backdrop-filter:blur(10px);color:rgba(255,255,255,.4);
+  font-size:1rem;cursor:pointer;display:none;
+  align-items:center;justify-content:center;
+  transition:border-color .3s,color .3s
+}
+#overlay.open #overlay-close{display:flex;pointer-events:auto}
+#overlay-close:hover{border-color:rgba(255,255,255,.35);color:#fff}
+#scroll-hint{
+  position:absolute;bottom:2.5rem;left:50%;transform:translateX(-50%);
+  display:flex;flex-direction:column;align-items:center;gap:.5rem;
+  opacity:0;transition:opacity .6s ease .8s
+}
+#overlay.open #scroll-hint{opacity:1}
+#scroll-hint span{
+  font-family:'Inter',sans-serif;font-size:.6rem;
+  letter-spacing:.25em;text-transform:uppercase;color:rgba(255,255,255,.2)
+}
+#scroll-hint .arrow{
+  width:1px;height:36px;
+  background:linear-gradient(to bottom,rgba(255,255,255,.3),transparent);
+  animation:scrollPulse 1.6s ease infinite
+}
+@keyframes scrollPulse{
+  0%,100%{opacity:1;transform:scaleY(1)}
+  50%{opacity:.3;transform:scaleY(.5)}
+}
+#about-spacer{display:none;height:150vh;position:relative}
+#about-spacer.active{display:block}
+.glass-cards{position:fixed;inset:0;z-index:150;pointer-events:none;display:none}
+.glass-cards.active{display:block}
+.gc{
+  position:absolute;background:rgba(6,6,8,.82);
+  border:1px solid rgba(255,255,255,.12);
+  backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
+  border-radius:4px;padding:2rem 2.2rem;
+  opacity:0;transform:translateY(16px);
+  transition:opacity .7s ease,transform .7s cubic-bezier(.16,1,.3,1)
+}
+.gc.show{opacity:1;transform:translateY(0)}
+.gc-label{
+  font-family:'Inter',sans-serif;font-size:.58rem;font-weight:600;
+  letter-spacing:.22em;text-transform:uppercase;
+  color:rgba(255,255,255,.3);margin-bottom:.85rem
+}
+.gc-title{
+  font-family:'Inter',sans-serif;font-size:clamp(1.3rem,2vw,1.9rem);
+  font-weight:900;color:#fff;letter-spacing:-.03em;
+  line-height:1.05;margin-bottom:.85rem
+}
+.gc-text{
+  font-family:'Inter',sans-serif;font-size:.8rem;
+  font-weight:300;color:rgba(255,255,255,.5);line-height:1.65
+}
+.gc-top{top:2%;left:31%;width:38%;min-height:10vh}
+.gc-bottom{bottom:2%;left:31%;width:38%;min-height:10vh}
+.gc-left1{top:2%;left:1%;width:28%;height:46%}
+.gc-left2{bottom:2%;left:1%;width:28%;height:46%}
+.gc-right1{top:2%;right:1%;width:28%;height:46%}
+.gc-right2{bottom:2%;right:1%;width:28%;height:46%}
+#overlay-screen2{min-height:100vh;padding:5rem 2.5rem 6rem;max-width:860px;margin:0 auto}
+.content-section{margin-bottom:3rem}
+.content-label{
+  font-family:'Inter',sans-serif;font-size:.62rem;font-weight:600;
+  letter-spacing:.22em;text-transform:uppercase;
+  color:rgba(255,255,255,.25);margin-bottom:1rem
+}
+.content-block{
+  background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);
+  border-radius:12px;padding:1.5rem;margin-bottom:1rem
+}
+.content-block h3{
+  font-family:'Inter',sans-serif;font-weight:700;font-size:1.05rem;
+  color:#fff;margin-bottom:.5rem;letter-spacing:-.02em
+}
+.content-block p{
+  font-family:'Inter',sans-serif;font-weight:300;font-size:.88rem;
+  color:rgba(255,255,255,.45);line-height:1.75
+}
+.content-block .meta{
+  font-family:'Inter',sans-serif;font-size:.68rem;font-weight:500;
+  color:rgba(255,255,255,.2);margin-top:.75rem;letter-spacing:.05em
+}
+.tag{
+  display:inline-block;font-family:'Inter',sans-serif;
+  font-size:.65rem;font-weight:500;letter-spacing:.06em;
+  border:1px solid rgba(255,255,255,.1);padding:.25rem .65rem;
+  border-radius:100px;color:rgba(255,255,255,.35);margin:.3rem .2rem 0 0
+}
+.section-divider{height:1px;background:rgba(255,255,255,.05);margin:2.5rem 0}
+.skills-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.6rem}
+.skill-item{
+  background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);
+  border-radius:8px;padding:.85rem 1rem;font-family:'Inter',sans-serif;
+  font-size:.78rem;font-weight:500;color:rgba(255,255,255,.45);text-align:center
+}
+.cert-list{display:flex;flex-direction:column;gap:.6rem}
+.cert-item{
+  display:flex;align-items:center;gap:.85rem;padding:.85rem 1.2rem;
+  background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:8px
+}
+.cert-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.2);flex-shrink:0}
+.cert-item span{
+  font-family:'Inter',sans-serif;font-size:.82rem;
+  font-weight:400;color:rgba(255,255,255,.45)
+}
+.cert-item .cert-status{
+  margin-left:auto;font-size:.6rem;letter-spacing:.1em;
+  text-transform:uppercase;color:rgba(255,255,255,.2)
+}
+</style>
+</head>
+<body>
+
+<iframe id="scene" src="https://my.spline.design/themuseum-WFbQMM0p8Arj5ecMSKoebHu4/" frameborder="0" allowfullscreen></iframe>
+
+<div id="cover-left"></div>
+<div id="cover-right"></div>
+<button id="contact-btn">Contact Me</button>
+
+<div id="zones">
+  <div class="zone" data-panel="projects" style="left:0%;top:0%;width:37%;height:76%;"></div>
+  <div class="zone" data-panel="about"    style="left:38%;top:0%;width:24%;height:76%;"></div>
+  <div class="zone" data-panel="education" style="left:63%;top:0%;width:37%;height:76%;"></div>
+</div>
+
+<div id="about-bg">
+  <spline-viewer url="https://prod.spline.design/TZGdDkrGrnzloxgL/scene.splinecode"></spline-viewer>
+</div>
+<div id="about-fade"></div>
+
+<iframe id="pax-preload"
+  src="projects_and_experience.html"
+  style="position:fixed;inset:0;width:100%;height:100%;border:none;z-index:-1;opacity:0;pointer-events:none;"
+></iframe>
+
+<div id="edu-wrapper" style="position:fixed;inset:0;overflow:hidden;z-index:105;opacity:0;pointer-events:none;transition:opacity 0.15s ease;will-change:opacity;">
+  <iframe id="edu-preload" style="position:absolute;top:0;left:0;width:calc(100% + 20px);height:100%;border:none;"></iframe>
+</div>
+<div id="edu-catcher" tabindex="-1" style="position:fixed;inset:0;z-index:106;pointer-events:none;outline:none;"></div>
+
+<div class="glass-cards" id="glass-cards">
+  <div class="gc gc-top">
+    <div class="gc-label">Who I Am</div>
+    <div class="gc-title">Computer Science Student.</div>
+    <div class="gc-text">Studying Computer Science with a focus on Management and Information Systems at University American College Skopje. I approach problems by looking at the underlying systems and behavioral patterns behind them — not just the visible outcome.</div>
+  </div>
+  <div class="gc gc-left1">
+    <div class="gc-label">Approach</div>
+    <div class="gc-title">Break complexity<br>into structure.</div>
+    <div class="gc-text">I'm naturally interested in cause-and-effect relationships — how people make decisions, how incentives shape behavior, and how small structural differences can completely change results. I break complexity into structure, identify leverage points, and improve systems through iteration and observation rather than relying on fixed formulas.</div>
+  </div>
+  <div class="gc gc-left2">
+    <div class="gc-label">Motivation</div>
+    <div class="gc-title">Long-term<br>potential first.</div>
+    <div class="gc-text">I tend to be motivated more by long-term potential than by my current position. I'm comfortable putting myself in environments where expectations are high and where I'm not necessarily the most experienced person in the room, because I learn best through responsibility, pressure, and exposure to real problems.</div>
+  </div>
+  <div class="gc gc-right1">
+    <div class="gc-label">Mindset</div>
+    <div class="gc-title">Systems over<br>symptoms.</div>
+    <div class="gc-text">A lot of my thinking has been influenced by philosophy and psychology — the idea that most visible problems are symptoms of deeper assumptions, motivations, or feedback loops. I try to understand not just what is happening, but why it is happening and what conditions are producing it.</div>
+  </div>
+  <div class="gc gc-right2">
+    <div class="gc-label">Environment</div>
+    <div class="gc-title">Ambiguity is<br>where I work.</div>
+    <div class="gc-text">I'm most engaged where problems are ambiguous and require conceptual thinking combined with practical execution. Growth is mostly a function of how far someone is willing to think, adapt, and push themselves. I'm naturally drawn toward ambitious environments where people are expected to think independently and operate without constant direction.</div>
+  </div>
+  <div class="gc gc-bottom">
+    <div class="gc-label">Philosophy</div>
+    <div class="gc-title">Built to operate without direction.</div>
+    <div class="gc-text">I believe the best environments are ones where you are expected to think independently, improve quickly, and take ownership before being asked. That is the standard I hold myself to.</div>
+  </div>
+</div>
+
+<div id="scroll-trap"></div>
+
+<div id="overlay" tabindex="-1" style="outline:none">
+  <button id="overlay-close">✕</button>
+  <div id="overlay-title-screen">
+    <div id="overlay-word"></div>
+    <div id="scroll-hint">
+      <span>Scroll to explore</span>
+      <div class="arrow"></div>
+    </div>
+  </div>
+  <div id="about-spacer"></div>
+  <div id="overlay-screen2"></div>
+</div>
+
+<script>
+const panels = {
+  about:     { word:'About Me',              render:()=>`` },
+  projects:  { word:'Projects & Experience', render:()=>`<div id="pax-slot" style="width:100%;height:100vh;background:#0c0f13;"></div>` },
+  education: { word:'Education & Skills',    render:()=>`` },
+  contact: {
+    word:'Contact',
+    render:()=>`
+      <div class="content-section">
+        <div class="content-label">Get In Touch</div>
+        <div class="content-block"><h3>Email</h3><p>markostojanovski8@gmail.com</p></div>
+        <div class="content-block"><h3>LinkedIn</h3><p><a href="https://www.linkedin.com/in/marko-stojanovski-a5046540b" target="_blank" style="color:rgba(255,255,255,.45);text-decoration:none;">linkedin.com/in/marko-stojanovski-a5046540b</a></p></div>
+        <div class="content-block"><h3>Phone</h3><p>070 335 588</p></div>
+      </div>`
+  }
+};
+
+const overlay     = document.getElementById('overlay');
+const wordEl      = document.getElementById('overlay-word');
+const screen2     = document.getElementById('overlay-screen2');
+const closeBtn    = document.getElementById('overlay-close');
+const aboutBg     = document.getElementById('about-bg');
+const aboutFade   = document.getElementById('about-fade');
+const glassCards  = document.getElementById('glass-cards');
+const titleScreen = document.getElementById('overlay-title-screen');
+
+let isAboutMode = false;
+let aboutScroll = 0;
+const ABOUT_MAX = window.innerHeight * 1.5;
+let glassCardsShown = false;
+
+function openOverlay(panelId) {
+  const panel = panels[panelId];
+  if (!panel) return;
+  wordEl.textContent = panel.word;
+  if (panelId === 'about') {
+    isAboutMode = true;
+    aboutScroll = 0;
+    overlay.classList.add('about-mode');
+    aboutBg.classList.add('active');
+    aboutFade.classList.add('active');
+    glassCards.classList.add('active');
+    hideGlassCards();
+    screen2.innerHTML = '';
+    applyAboutScroll();
+  } else {
+    isAboutMode = false;
+    overlay.classList.remove('about-mode');
+    aboutBg.classList.remove('active');
+    aboutFade.classList.remove('active');
+    glassCards.classList.remove('active');
+    hideGlassCards();
+    screen2.innerHTML = panel.render();
+    overlay.scrollTop = 0;
+    if (panelId === 'projects') {
+      overlay.classList.add('iframe-mode');
+      titleScreen.style.display = 'none';
+      hideEduIframe();
+      initPaxProjects();
+    } else if (panelId === 'education') {
+      overlay.classList.add('iframe-mode');
+      titleScreen.style.display = 'none';
+      hidePaxIframe();
+      initEducation();
+    } else {
+      overlay.classList.remove('iframe-mode');
+      hidePaxIframe();
+      hideEduIframe();
+      titleScreen.style.display = '';
+    }
+    titleScreen.style.transform = '';
+    titleScreen.style.opacity = '';
+  }
+  overlay.classList.add('open');
+  if (panelId !== 'projects' && panelId !== 'education') {
+    setTimeout(() => overlay.focus(), 50);
+  }
+}
+
+function closeOverlay() {
+  overlay.classList.remove('open','about-mode','iframe-mode');
+  aboutBg.classList.remove('active');
+  aboutFade.classList.remove('active');
+  aboutFade.style.opacity = '0';
+  glassCards.classList.remove('active');
+  hideGlassCards();
+  isAboutMode = false;
+  aboutScroll = 0;
+  overlay.scrollTop = 0;
+  titleScreen.style.transform = '';
+  titleScreen.style.opacity   = '';
+  titleScreen.style.display   = '';
+  wordEl.style.opacity        = '';
+  wordEl.style.transform      = '';
+  hidePaxIframe();
+  hideEduIframe();
+}
+
+function applyAboutScroll() {
+  const vh = window.innerHeight;
+  const progress = Math.min(aboutScroll / vh, 1);
+  titleScreen.style.transform = `translateY(${-aboutScroll}px)`;
+  titleScreen.style.opacity   = String(Math.max(0, 1 - progress * 2));
+  aboutFade.style.opacity     = String(Math.max(0, 1 - progress / 0.8));
+  if (progress > 0.8) showGlassCards(); else hideGlassCards();
+  if (aboutScroll <= 0 && progress === 0) {
+    titleScreen.style.transform = '';
+    titleScreen.style.opacity = '';
+  }
+}
+
+window.addEventListener('wheel', (e) => {
+  if (!isAboutMode) return;
+  aboutScroll = Math.max(0, Math.min(ABOUT_MAX, aboutScroll + e.deltaY));
+  applyAboutScroll();
+  if (aboutScroll === 0 && e.deltaY < 0) closeOverlay();
+}, { passive:true });
+
+let touchStartY = 0;
+window.addEventListener('touchstart', e => {
+  if (!isAboutMode) return;
+  touchStartY = e.touches[0].clientY;
+}, { passive:true });
+window.addEventListener('touchmove', e => {
+  const dy = touchStartY - e.touches[0].clientY;
+  touchStartY = e.touches[0].clientY;
+  if (!isAboutMode) return;
+  aboutScroll = Math.max(0, Math.min(ABOUT_MAX, aboutScroll + dy));
+  applyAboutScroll();
+  if (aboutScroll === 0 && dy < 0) closeOverlay();
+}, { passive:true });
+
+overlay.addEventListener('scroll', () => {
+  if (isAboutMode) return;
+  if (overlay.scrollTop === 0) {
+    clearTimeout(overlay._closeTimer);
+    overlay._closeTimer = setTimeout(() => { if (overlay.scrollTop === 0) closeOverlay(); }, 200);
+  }
+});
+
+function showGlassCards() {
+  if (glassCardsShown) return;
+  glassCardsShown = true;
+  document.querySelectorAll('.gc').forEach((c,i) => setTimeout(() => c.classList.add('show'), i*120));
+}
+function hideGlassCards() {
+  if (!glassCardsShown) return;
+  glassCardsShown = false;
+  document.querySelectorAll('.gc').forEach(c => c.classList.remove('show'));
+}
+
+document.querySelectorAll('.zone').forEach(z => z.addEventListener('click', () => openOverlay(z.dataset.panel)));
+document.getElementById('contact-btn').addEventListener('click', () => openOverlay('contact'));
+closeBtn.addEventListener('click', closeOverlay);
+document.addEventListener('keydown', e => { if (e.key==='Escape') closeOverlay(); });
+
+// Projects iframe
+const paxIframe = document.getElementById('pax-preload');
+function showPaxIframe() {
+  paxIframe.style.zIndex = '105';
+  paxIframe.style.opacity = '1';
+  paxIframe.style.pointerEvents = 'all';
+}
+function hidePaxIframe() {
+  paxIframe.style.zIndex = '-1';
+  paxIframe.style.opacity = '0';
+  paxIframe.style.pointerEvents = 'none';
+}
+window.addEventListener('message', e => { if (e.data==='museum-close') closeOverlay(); });
+paxIframe.addEventListener('load', () => {
+  try {
+    const st = paxIframe.contentDocument.createElement('style');
+    st.textContent = '*::-webkit-scrollbar{display:none!important}*{scrollbar-width:none!important}';
+    paxIframe.contentDocument.head.appendChild(st);
+    paxIframe.contentDocument.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') window.parent.postMessage('museum-close', '*');
+    });
+  } catch(e) {}
+});
+function initPaxProjects() { showPaxIframe(); }
+
+// Education iframe
+const eduIframe  = document.getElementById('edu-preload');
+const eduWrapper = document.getElementById('edu-wrapper');
+const eduCatcher = document.getElementById('edu-catcher');
+let eduPollId = null;
+
+function showEduIframe() {
+  eduWrapper.style.opacity = '1';
+  eduWrapper.style.pointerEvents = 'all';
+}
+function hideEduIframe() {
+  eduWrapper.style.opacity = '0';
+  eduWrapper.style.pointerEvents = 'none';
+  stopEduCatcher();
+}
+
+let eduVScroll = 0, eduCrossOrigin = false;
+
+function activateEduCatcher() {
+  if (eduCrossOrigin) {
+    eduCatcher.style.bottom = 'auto';
+    eduCatcher.style.height = '70px';
+  } else {
+    eduCatcher.style.height = '';
+    eduCatcher.style.bottom = '0';
+  }
+  eduCatcher.style.pointerEvents = 'auto';
+}
+function deactivateEduCatcher() { eduCatcher.style.pointerEvents = 'none'; }
+
+eduCatcher.addEventListener('wheel', (e) => {
+  const px = e.deltaMode===1 ? e.deltaY*20 : e.deltaMode===2 ? e.deltaY*window.innerHeight : e.deltaY;
+  if (!eduCrossOrigin) {
+    eduVScroll = Math.max(0, eduVScroll + px);
+    if (px < 0 && eduVScroll <= 0) { closeOverlay(); return; }
+    try {
+      eduIframe.contentWindow.scrollBy(0, px);
+    } catch(err) {
+      eduCrossOrigin = true;
+      deactivateEduCatcher();
+      setTimeout(activateEduCatcher, 32);
+    }
+  } else {
+    if (px < 0) closeOverlay();
+    else try { eduIframe.contentWindow.scrollBy(0, px); } catch(err) {}
+  }
+}, { capture:true, passive:true });
+
+function startEduCatcher() { eduVScroll=0; eduCrossOrigin=false; activateEduCatcher(); eduCatcher.focus(); }
+eduCatcher.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeOverlay(); });
+function stopEduCatcher() {
+  deactivateEduCatcher();
+  if (eduPollId) { clearInterval(eduPollId); eduPollId=null; }
+}
+function initEducation() {
+  eduVScroll=0; eduCrossOrigin=false;
+  eduWrapper.style.opacity='0';
+  eduIframe.onload = function() {
+    eduIframe.onload=null;
+    showEduIframe();
+    startEduCatcher();
+  };
+  eduIframe.src='education.html';
+}
+</script>
+</body>
+</html>
