@@ -12,24 +12,7 @@
 <meta name="twitter:description" content="">
 <link rel="preconnect" href="https://prod.spline.design">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
-<script type="module" src="https://unpkg.com/@splinetool/viewer@1.12.95/build/spline-viewer.js">
-// Obfuscated contact
-function _dc(a){return a.map(c=>String.fromCharCode(c)).join('');}
-const _e=[109,97,114,107,111,115,116,111,106,97,110,111,118,115,107,105,56,64,103,109,97,105,108,46,99,111,109];
-const _p=[48,55,48,32,51,51,53,32,53,56,56];
-const _l=[104,116,116,112,115,58,47,47,119,119,119,46,108,105,110,107,101,100,105,110,46,99,111,109,47,105,110,47,109,97,114,107,111,45,115,116,111,106,97,110,111,118,115,107,105,45,97,53,48,52,54,53,52,48,98];
-const _lt=[108,105,110,107,101,100,105,110,46,99,111,109,47,105,110,47,109,97,114,107,111,45,115,116,111,106,97,110,111,118,115,107,105,45,97,53,48,52,54,53,52,48,98];
-function _rc(){
-  const ce=document.getElementById('_ce');
-  const cp=document.getElementById('_cp');
-  const cl=document.getElementById('_cl');
-  if(ce){ce.textContent=_dc(_e);}
-  if(cp){cp.textContent=_dc(_p);}
-  if(cl){cl.href=_dc(_l);cl.textContent=_dc(_lt);}
-}
-const _ro=openOverlay;
-openOverlay=function(id){_ro(id);if(id==='contact')setTimeout(_rc,0);};
-</script>
+<script type="module" src="https://unpkg.com/@splinetool/viewer@1.12.95/build/spline-viewer.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{width:100%;height:100%;background:#000;overflow:hidden}
@@ -68,9 +51,9 @@ html,body{width:100%;height:100%;background:#000;overflow:hidden}
   pointer-events:none;opacity:0;transition:none;will-change:opacity
 }
 #about-fade.active{opacity:1}
-#about-bg{position:fixed;inset:0;z-index:97;opacity:0;pointer-events:none}
+#about-bg{position:fixed;inset:0;z-index:97;opacity:0;pointer-events:none;}
 #about-bg.active{opacity:1;pointer-events:all}
-#about-bg spline-viewer{width:100%;height:100%;display:block;pointer-events:none}
+#about-bg iframe{width:100%;height:100%;border:none;display:block;}
 #overlay-title-screen{
   height:100vh;display:flex;flex-direction:column;
   align-items:center;justify-content:center;
@@ -320,8 +303,7 @@ function openOverlay(panelId) {
   mainScene.style.display = 'none';
   wordEl.textContent = panel.word;
   if (panelId === 'about') {
-    if (!aboutSplineInited) { aboutSplineInited = true; aboutSpline.src='https://my.spline.design/thecreature-x0M3fAT1adFU8qttuSlOcjzi/'; }
-    isAboutMode = true;
+        isAboutMode = true;
     aboutScroll = 0;
     overlay.classList.add('about-mode');
     aboutBg.classList.add('active');
@@ -558,6 +540,23 @@ function initEducation() {
   };
   eduIframe.src='education.html';
 }
+
+// Obfuscated contact
+function _dc(a){return a.map(c=>String.fromCharCode(c)).join('');}
+const _e=[109,97,114,107,111,115,116,111,106,97,110,111,118,115,107,105,56,64,103,109,97,105,108,46,99,111,109];
+const _p=[48,55,48,32,51,51,53,32,53,56,56];
+const _l=[104,116,116,112,115,58,47,47,119,119,119,46,108,105,110,107,101,100,105,110,46,99,111,109,47,105,110,47,109,97,114,107,111,45,115,116,111,106,97,110,111,118,115,107,105,45,97,53,48,52,54,53,52,48,98];
+const _lt=[108,105,110,107,101,100,105,110,46,99,111,109,47,105,110,47,109,97,114,107,111,45,115,116,111,106,97,110,111,118,115,107,105,45,97,53,48,52,54,53,52,48,98];
+function _rc(){
+  const ce=document.getElementById('_ce');
+  const cp=document.getElementById('_cp');
+  const cl=document.getElementById('_cl');
+  if(ce){ce.textContent=_dc(_e);}
+  if(cp){cp.textContent=_dc(_p);}
+  if(cl){cl.href=_dc(_l);cl.textContent=_dc(_lt);}
+}
+const _ro=openOverlay;
+openOverlay=function(id){_ro(id);if(id==='contact')setTimeout(_rc,0);};
 </script>
 </body>
 </html>
