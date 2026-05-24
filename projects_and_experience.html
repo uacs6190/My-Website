@@ -4096,5 +4096,19 @@ Projects`})}),fn.paragraphs.map((s,o)=>Qe.jsx(y4,{index:o,...s,image:n[o]},o)),f
     else{window.addEventListener('load',setup);}
   })();
   </script>
+  <script>
+  (function(){
+    var attempts=0;
+    var interval=setInterval(function(){
+      var canvas=document.querySelector('canvas');
+      if(canvas&&canvas.__r3f&&canvas.__r3f.gl){
+        var gl=canvas.__r3f.gl;
+        gl.setPixelRatio(Math.min(window.devicePixelRatio,1.5));
+        clearInterval(interval);
+      }
+      if(++attempts>40)clearInterval(interval);
+    },300);
+  })();
+  </script>
   </body>
 </html>
